@@ -1,0 +1,4 @@
+psycopg[binary]==3.2.10
+boto3==1.40.30
+confluent-kafka==2.11.1
+Faker==37.6.0

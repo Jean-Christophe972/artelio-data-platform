@@ -1,0 +1,22 @@
+# Généré par Terraform (templatefile) : le mot de passe n'est jamais écrit dans le dépôt
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  # Entrepôt pseudonymisé, lu avec le compte "analyst" (lecture seule du schéma dwh)
+  - name: Entrepot Artelio
+    uid: dwh
+    type: grafana-postgresql-datasource
+    url: pg-replica:5432
+    user: analyst
+    jsonData:
+      database: artelio
+      sslmode: require
+      postgresVersion: 1600
+    secureJsonData:
+      password: "${analyst_password}"

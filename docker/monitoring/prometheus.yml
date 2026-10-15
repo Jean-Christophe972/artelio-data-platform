@@ -1,0 +1,47 @@
+# Prometheus : collecte des métriques de tous les composants toutes les 15 s
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    plateforme: artelio
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["pg-exporter-primary:9187"]
+        labels: { role: primary }
+      - targets: ["pg-exporter-replica:9187"]
+        labels: { role: replica }
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+
+  - job_name: object-storage
+    static_configs:
+      - targets: ["object-storage:9327"]
+
+  - job_name: pushgateway        # métriques poussées par les jobs ponctuels (sauvegardes)
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]

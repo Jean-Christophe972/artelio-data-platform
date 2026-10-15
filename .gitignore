@@ -1,0 +1,15 @@
+# Terraform : l'état contient des secrets générés, il ne doit jamais être versionné
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Fichiers locaux
+.env
+*.dump
+*.enc
+__pycache__/
+.DS_Store
+exports/

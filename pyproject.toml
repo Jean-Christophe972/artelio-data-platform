@@ -1,0 +1,10 @@
+# Configuration de l'analyse statique du code Python (ruff : PEP 8, imports, bugs courants)
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "N", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["platform_common", "synthetic"]

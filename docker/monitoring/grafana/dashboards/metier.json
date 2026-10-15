@@ -1,0 +1,253 @@
+{
+  "title": "Activité métier Artelio",
+  "uid": "artelio-metier",
+  "description": "Indicateurs métier calculés sur l'entrepôt en étoile (données pseudonymisées).",
+  "editable": false,
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-2y",
+    "to": "now"
+  },
+  "refresh": "",
+  "timezone": "browser",
+  "tags": [
+    "artelio"
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Activité (entrepôt pseudonymisé, lu par le compte analyst sur le réplica)",
+      "id": 1,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Demandes par mois et par métier (saisonnalité)",
+      "description": "Le chauffage explose en hiver : c'est cette dérive saisonnière que le modèle IA (bloc 4) doit absorber.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT make_date(d.annee, d.mois, 1) AS \"time\", count(*) FILTER (WHERE m.metier_code = 'chauffage') AS \"Chauffage\", count(*) FILTER (WHERE m.metier_code = 'plomberie') AS \"Plomberie\", count(*) FILTER (WHERE m.metier_code = 'electricite') AS \"Électricité\", count(*) FILTER (WHERE m.metier_code = 'serrurerie') AS \"Serrurerie\", count(*) FILTER (WHERE m.metier_code = 'peinture') AS \"Peinture\", count(*) FILTER (WHERE m.metier_code = 'menuiserie') AS \"Menuiserie\", count(*) FILTER (WHERE m.metier_code = 'petits_travaux') AS \"Petits travaux\"\n            FROM dwh.fait_demande f JOIN dwh.dim_date d USING (date_key) JOIN dwh.dim_metier m USING (metier_key)\n            WHERE d.jour < date_trunc('month', current_date)\n            GROUP BY 1 ORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "id": 2,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Demandes par département",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT z.libelle AS departement, count(*) AS demandes\n            FROM dwh.fait_demande f JOIN dwh.dim_zone z USING (zone_key)\n            GROUP BY 1 ORDER BY 2 DESC",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "departement"
+      },
+      "id": 3,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 10
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Taux de conversion par urgence",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT urgence, round(100.0 * avg(convertie::int), 1) AS \"taux de conversion (%)\"\n            FROM dwh.fait_demande WHERE urgence IS NOT NULL\n            GROUP BY 1 ORDER BY 2 DESC",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "xField": "urgence"
+      },
+      "id": 4,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Délai moyen d'intervention par zone (h)",
+      "description": "Indicateur d'équité du plan de gouvernance : l'écart entre zones doit rester faible.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT z.couronne, round(avg(delai_intervention_h), 1) AS \"délai moyen (h)\"\n            FROM dwh.fait_intervention f JOIN dwh.dim_zone z USING (zone_key)\n            GROUP BY 1 ORDER BY 2",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "xField": "couronne"
+      },
+      "id": 5,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Chiffre d'affaires mensuel (commission Artelio)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT make_date(d.annee, d.mois, 1) AS \"time\", sum(commission_artelio) AS \"commission (€)\"\n            FROM dwh.fait_intervention f JOIN dwh.dim_date d USING (date_key)\n            WHERE commission_artelio IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "id": 6,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Qualité de l'IA : demandes corrigées par un humain (%)",
+      "description": "Supervision humaine du modèle de qualification (AI Act, plan de gouvernance §8).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dwh"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dwh"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "\n            SELECT make_date(d.annee, d.mois, 1) AS \"time\", round(100.0 * avg(correction_humaine::int), 1) AS \"corrections (%)\"\n            FROM dwh.fait_demande f JOIN dwh.dim_date d USING (date_key)\n            GROUP BY 1 ORDER BY 1",
+          "refId": "A",
+          "editorMode": "code"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "id": 7,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      }
+    }
+  ]
+}

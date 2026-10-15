@@ -1,0 +1,22 @@
+# Alertmanager : regroupe les alertes et les envoie à l'équipe.
+# Environnement local : les alertes sont visibles dans l'interface (http://localhost:19093).
+# Production : ajouter un receiver Slack / e-mail / PagerDuty (astreinte).
+route:
+  receiver: equipe-data
+  group_by: [alertname, role]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: [severity="critical"]
+      receiver: equipe-data
+      repeat_interval: 1h
+
+receivers:
+  - name: equipe-data
+
+inhibit_rules:
+  # Si un service est indisponible, inutile d'alerter aussi sur ses symptômes
+  - source_matchers: [alertname="ServiceIndisponible"]
+    target_matchers: [severity="warning"]
+    equal: [job]
