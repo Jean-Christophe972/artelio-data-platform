@@ -67,3 +67,41 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "Le groupe {{ $labels.consumergroup }} a {{ $value }} messages de retard sur {{ $labels.topic }}"
+
+  - name: pipelines
+    rules:
+      - alert: TauxDeRejetEleve
+        expr: sum(rate(artelio_evenements_rejetes_total[5m])) / sum(rate(artelio_evenements_recus_total[5m])) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 5 % des événements sont rejetés vers la file d'erreurs (DLQ)"
+          description: "Un producteur envoie probablement des données mal formées. Voir le topic dlq.erreurs."
+
+      - alert: ControleQualiteEnEchec
+        expr: artelio_qualite_regle_ok == 0
+        labels: { severity: warning }
+        annotations:
+          summary: "Règle de qualité en échec : {{ $labels.regle }}"
+          description: "Le DAG qualite_donnees a détecté une anomalie. Détail dans pipeline.resultats_qualite."
+
+      - alert: SuspicionDeViolation
+        expr: artelio_anomalies_audit > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "Opérations massives inhabituelles sur des données personnelles"
+          description: "Appliquer la procédure de gestion des violations (plan de gouvernance §11.1) : qualifier sous 24 h."
+
+      - alert: EntrepotNonRafraichi
+        expr: time() - artelio_dwh_dernier_chargement_timestamp_seconds > 7200
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "L'entrepôt n'a pas été rafraîchi depuis plus de 2 h"
+
+      - alert: TacheAirflowEnEchec
+        expr: time() - artelio_dag_dernier_echec_timestamp_seconds < 3600
+        labels: { severity: warning }
+        annotations:
+          summary: "Échec d'une tâche Airflow ({{ $labels.dag }})"
+          description: "Airflow a épuisé ses tentatives automatiques. Voir http://localhost:18080"

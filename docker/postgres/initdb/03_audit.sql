@@ -45,6 +45,22 @@ BEGIN
 END;
 $$;
 
+-- Détection d'anomalies : un compte qui modifie ou supprime en masse des données personnelles
+-- (hors purges du DPO) peut signaler une compromission ou une erreur grave. Appelée par le
+-- pipeline de qualité (bloc 3), qui déclenche une alerte : premier maillon de la procédure
+-- de gestion des violations (plan de gouvernance §11.1).
+CREATE FUNCTION audit.detecter_anomalies(p_fenetre interval DEFAULT '1 hour', p_seuil integer DEFAULT 500)
+RETURNS TABLE (utilisateur text, operation text, table_cible text, nb_lignes bigint)
+LANGUAGE sql SECURITY DEFINER SET search_path = audit, pg_temp AS $$
+    SELECT j.utilisateur, j.operation, j.table_cible, count(*)
+    FROM audit.journal j
+    WHERE j.horodatage > now() - p_fenetre
+      AND j.operation IN ('UPDATE', 'DELETE')
+      AND j.utilisateur <> 'dpo_officer'
+    GROUP BY 1, 2, 3
+    HAVING count(*) > p_seuil
+$$;
+
 -- Ajout seul : même le propriétaire applicatif ne peut pas réécrire l'historique
 CREATE FUNCTION audit.interdire_modification() RETURNS trigger
 LANGUAGE plpgsql AS $$

@@ -87,6 +87,8 @@ class Generateur:
                 self.add("consentements", (cid, "fiche_habitation", True, "app", cree))
             if self.rng.random() < 0.3:
                 self.add("consentements", (cid, "prospection", True, "web", cree))
+            if self.rng.random() < 0.03:
+                self.add("consentements", (cid, "entrainement_ia", False, "app", cree))
             clients.append({"id": cid, "logement": lid, "dep": dep, "cree": cree})
         return clients
 

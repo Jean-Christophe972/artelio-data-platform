@@ -29,6 +29,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA dwh TO pi
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA dwh TO pipeline_etl;
 GRANT EXECUTE ON PROCEDURE dwh.rafraichir_entrepot() TO pipeline_etl;
 
+GRANT UPDATE (statut, debut_reel, fin_reelle) ON app.interventions TO pipeline_etl;
+GRANT EXECUTE ON FUNCTION audit.detecter_anomalies(interval, integer) TO pipeline_etl;
+GRANT USAGE ON SCHEMA audit TO pipeline_etl;
+
+-- Schéma propre aux pipelines (traçabilité des exécutions, résultats des contrôles qualité) :
+-- le bloc 3 y crée ses tables avec ses propres migrations
+CREATE SCHEMA pipeline AUTHORIZATION pipeline_etl;
+GRANT USAGE ON SCHEMA pipeline TO dpo_officer, analyst;
+
 -- Analystes : entrepôt uniquement
 GRANT USAGE ON SCHEMA dwh TO analyst;
 GRANT SELECT ON ALL TABLES IN SCHEMA dwh TO analyst;

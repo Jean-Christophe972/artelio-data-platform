@@ -21,6 +21,12 @@ locals {
         actions     = ["Read:photos", "Write:photos", "List:photos", "Read:factures", "Write:factures", "List:factures"]
       },
       {
+        # Pipelines (bloc 3) : purge des photos expirées, export des jeux d'entraînement IA
+        name        = "pipeline"
+        credentials = [{ accessKey = random_password.s3_access["pipeline"].result, secretKey = random_password.s3_secret["pipeline"].result }]
+        actions     = ["Read:photos", "Write:photos", "List:photos", "Read:datasets", "Write:datasets", "List:datasets"]
+      },
+      {
         name        = "backup"
         credentials = [{ accessKey = random_password.s3_access["backup"].result, secretKey = random_password.s3_secret["backup"].result }]
         actions     = ["Read:backups", "Write:backups", "List:backups"]

@@ -17,8 +17,9 @@ from platform_common import get_logger, require_env, retry, s3_client
 
 log = get_logger("init")
 
-# photos : pièces jointes des demandes ; factures : PDF (10 ans) ; backups : sauvegardes chiffrées
-BUCKETS = ["photos", "factures", "backups"]
+# photos : pièces jointes des demandes ; factures : PDF (10 ans) ; backups : sauvegardes chiffrées ;
+# datasets : jeux d'entraînement IA pseudonymisés et versionnés (bloc 3 → bloc 4)
+BUCKETS = ["photos", "factures", "backups", "datasets"]
 
 
 def create_buckets() -> None:

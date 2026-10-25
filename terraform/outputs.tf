@@ -43,6 +43,8 @@ output "secrets" {
     s3_app_access_key    = random_password.s3_access["app"].result
     s3_app_secret_key    = random_password.s3_secret["app"].result
     pseudonymisation_key = random_password.pseudonymisation_key.result
+    s3_pipeline_access   = random_password.s3_access["pipeline"].result
+    s3_pipeline_secret   = random_password.s3_secret["pipeline"].result
   }
 }
 

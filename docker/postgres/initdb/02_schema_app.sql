@@ -61,7 +61,7 @@ CREATE TABLE logements (
 CREATE TABLE consentements (
     id          bigserial PRIMARY KEY,
     client_id   uuid NOT NULL REFERENCES clients (id) ON DELETE CASCADE,
-    finalite    text NOT NULL CHECK (finalite IN ('fiche_habitation', 'prospection', 'mesure_audience', 'donnees_accessibilite')),
+    finalite    text NOT NULL CHECK (finalite IN ('fiche_habitation', 'prospection', 'mesure_audience', 'donnees_accessibilite', 'entrainement_ia')),
     accorde     boolean NOT NULL,
     source      text NOT NULL CHECK (source IN ('app', 'web', 'telephone')),
     horodatage  timestamptz NOT NULL DEFAULT now()
