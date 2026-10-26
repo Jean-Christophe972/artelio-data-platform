@@ -45,6 +45,9 @@ output "secrets" {
     pseudonymisation_key = random_password.pseudonymisation_key.result
     s3_pipeline_access   = random_password.s3_access["pipeline"].result
     s3_pipeline_secret   = random_password.s3_secret["pipeline"].result
+    postgres_ml_service  = random_password.db["ml_service"].result
+    s3_ml_access         = random_password.s3_access["ml"].result
+    s3_ml_secret         = random_password.s3_secret["ml"].result
   }
 }
 

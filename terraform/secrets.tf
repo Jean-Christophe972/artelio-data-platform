@@ -7,8 +7,8 @@
 
 locals {
   # Un compte par usage = principe du moindre privilège (voir docker/postgres/initdb)
-  db_accounts = ["admin", "replicator", "app_api", "pipeline_etl", "analyst", "dpo_officer", "monitoring", "backup"]
-  s3_accounts = ["admin", "app", "backup", "pipeline"]
+  db_accounts = ["admin", "replicator", "app_api", "pipeline_etl", "analyst", "dpo_officer", "monitoring", "backup", "ml_service"]
+  s3_accounts = ["admin", "app", "backup", "pipeline", "ml"]
 }
 
 resource "random_password" "db" {

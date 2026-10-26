@@ -29,6 +29,7 @@ locals {
     "DPO_OFFICER_PASSWORD=${random_password.db["dpo_officer"].result}",
     "MONITORING_PASSWORD=${random_password.db["monitoring"].result}",
     "BACKUP_PASSWORD=${random_password.db["backup"].result}",
+    "ML_SERVICE_PASSWORD=${random_password.db["ml_service"].result}",
     "COLUMN_ENCRYPTION_KEY=${random_password.column_encryption_key.result}",
     "PSEUDONYMISATION_KEY=${random_password.pseudonymisation_key.result}",
   ]

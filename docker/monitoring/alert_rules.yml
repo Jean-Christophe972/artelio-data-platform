@@ -105,3 +105,42 @@ groups:
         annotations:
           summary: "Échec d'une tâche Airflow ({{ $labels.dag }})"
           description: "Airflow a épuisé ses tentatives automatiques. Voir http://localhost:18080"
+
+  - name: ia
+    rules:
+      - alert: LatenceIAElevee
+        expr: histogram_quantile(0.95, sum by (le) (rate(artelio_ia_latence_secondes_bucket[5m]))) > 0.3
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "L'API de qualification répond en plus de 300 ms (p95)"
+
+      - alert: ErreursAPIIA
+        expr: sum(rate(artelio_ia_requetes_total{code=~"5.."}[5m])) / sum(rate(artelio_ia_requetes_total[5m])) > 0.01
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Plus de 1 % d'erreurs serveur sur l'API de qualification"
+
+      - alert: TauxRevueHumaineEleve
+        expr: sum(rate(artelio_ia_revue_humaine_total[30m])) / sum(rate(artelio_ia_predictions_total[30m])) > 0.30
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 30 % des demandes partent en revue humaine"
+          description: "Le modèle est moins sûr de lui : signe probable de dérive des données."
+
+      - alert: DeriveDonneesDetectee
+        expr: artelio_ia_derive_detectee == 1
+        labels: { severity: warning }
+        annotations:
+          summary: "Dérive des données détectée par Evidently ({{ $value }})"
+          description: "Le réentraînement automatique est déclenché ; vérifier le rapport dans le bucket mlflow."
+
+      - alert: TauxCorrectionHumaineEleve
+        expr: artelio_ia_taux_correction_humaine > 0.15
+        for: 1h
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 15 % des métiers prédits sont corrigés par le support"
+          description: "Dégradation des performances réelles du modèle : réentraînement à envisager."

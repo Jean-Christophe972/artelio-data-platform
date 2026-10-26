@@ -6,6 +6,7 @@
 -- pipeline_etl  | lecture             | NON             | lecture/écriture   | -       | purge
 -- analyst       | -                   | -               | lecture            | -       | -
 -- dpo_officer   | -                   | -               | -                  | lecture | export, effacement, purge
+-- ml_service    | demandes (colonnes utiles) | NON  | -                  | -       | -     (+ schéma ml)
 -- monitoring    | statistiques uniquement (pg_monitor)
 -- backup_agent  | lecture de tout (pg_read_all_data) pour les sauvegardes
 -- =============================================================================

@@ -40,6 +40,13 @@ scrape_configs:
         port: 8000
         refresh_interval: 15s
 
+  - job_name: ia-api            # API de qualification (bloc 4), découverte DNS
+    dns_sd_configs:
+      - names: ["artelio-api"]
+        type: A
+        port: 8000
+        refresh_interval: 15s
+
   - job_name: pushgateway        # métriques poussées par les jobs ponctuels (sauvegardes)
     honor_labels: true
     static_configs:

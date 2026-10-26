@@ -27,6 +27,12 @@ locals {
         actions     = ["Read:photos", "Write:photos", "List:photos", "Read:datasets", "Write:datasets", "List:datasets"]
       },
       {
+        # Service IA (bloc 4) : lit les jeux d'entraînement, écrit les artefacts MLflow et les rapports de dérive
+        name        = "ml"
+        credentials = [{ accessKey = random_password.s3_access["ml"].result, secretKey = random_password.s3_secret["ml"].result }]
+        actions     = ["Read:datasets", "List:datasets", "Read:mlflow", "Write:mlflow", "List:mlflow"]
+      },
+      {
         name        = "backup"
         credentials = [{ accessKey = random_password.s3_access["backup"].result, secretKey = random_password.s3_secret["backup"].result }]
         actions     = ["Read:backups", "Write:backups", "List:backups"]

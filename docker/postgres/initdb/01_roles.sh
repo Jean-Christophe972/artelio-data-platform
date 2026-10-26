@@ -20,6 +20,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   -- DPO : exécute les fonctions RGPD (export, effacement, purge) et lit le journal d'audit
   CREATE ROLE dpo_officer WITH LOGIN CONNECTION LIMIT 5 PASSWORD '${DPO_OFFICER_PASSWORD}';
 
+  -- Service IA (bloc 4) : qualification des demandes, journal des prédictions (droits : 07_ml.sql)
+  CREATE ROLE ml_service WITH LOGIN CONNECTION LIMIT 20 PASSWORD '${ML_SERVICE_PASSWORD}';
+
   -- Supervision (Prometheus) : statistiques uniquement, aucune donnée métier
   CREATE ROLE monitoring WITH LOGIN CONNECTION LIMIT 5 PASSWORD '${MONITORING_PASSWORD}' IN ROLE pg_monitor;
 
@@ -35,5 +38,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   -- Personne ne se connecte ni ne crée d'objet par défaut
   REVOKE ALL ON DATABASE ${POSTGRES_DB} FROM PUBLIC;
   REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-  GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO app_api, pipeline_etl, analyst, dpo_officer, monitoring, backup_agent;
+  GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO app_api, pipeline_etl, analyst, dpo_officer, monitoring, backup_agent, ml_service;
 EOSQL
