@@ -1,0 +1,40 @@
+# Contrôle de l'infrastructure as code à chaque modification
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  terraform:
+    name: Terraform (format et validation)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.9.8" }
+      - run: terraform -chdir=terraform fmt -check -recursive
+      - run: terraform -chdir=terraform init -backend=false -input=false
+      - run: terraform -chdir=terraform validate
+
+  scripts:
+    name: Scripts shell et Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          shellcheck scripts/*.sh docker/backup/*.sh docker/postgres/initdb/*.sh
+          (cd docker/postgres/scripts && shellcheck -x common.sh entrypoint-primary.sh entrypoint-replica.sh)
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff==0.13.0 && ruff check . && ruff format --check .
+
+  supervision:
+    name: Règles d'alerte Prometheus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: promtool check rules
+        run: docker run --rm -v "$PWD/docker/monitoring":/m --entrypoint promtool prom/prometheus:v3.5.0 check rules /m/alert_rules.yml
