@@ -27,10 +27,14 @@ locals {
         actions     = ["Read:photos", "Write:photos", "List:photos", "Read:datasets", "Write:datasets", "List:datasets"]
       },
       {
-        # Service IA (bloc 4) : lit les jeux d'entraînement, écrit les artefacts MLflow et les rapports de dérive
+        # Service IA (bloc 4) : lit les jeux d'entraînement, écrit les artefacts MLflow et les rapports de dérive.
+        # SeaweedFS 3.97 refuse la lecture à une identité sans droit d'écriture sur le bucket (comportement
+        # constaté) : "Write:datasets" est donc nécessaire. Mesure compensatoire : l'empreinte de référence de
+        # chaque jeu est lue dans PostgreSQL (pipeline.datasets), où ml_service n'a qu'un droit de lecture ;
+        # toute modification d'un jeu dans S3 est détectée et l'entraînement refusé.
         name        = "ml"
         credentials = [{ accessKey = random_password.s3_access["ml"].result, secretKey = random_password.s3_secret["ml"].result }]
-        actions     = ["Read:datasets", "List:datasets", "Read:mlflow", "Write:mlflow", "List:mlflow"]
+        actions     = ["Read:datasets", "Write:datasets", "List:datasets", "Read:mlflow", "Write:mlflow", "List:mlflow"]
       },
       {
         name        = "backup"
