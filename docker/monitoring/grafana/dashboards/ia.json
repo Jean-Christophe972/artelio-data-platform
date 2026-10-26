@@ -1085,7 +1085,7 @@
           },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "\n            SELECT to_char(horodatage, 'DD/MM HH24:MI') AS \"date\", version_modele AS \"modèle\", n_courant AS \"prédictions\",\n                   CASE WHEN derive_detectee THEN 'DÉRIVE' ELSE 'stable' END AS \"résultat\",\n                   round(100 * part_variables) || ' %' AS \"variables en dérive\", array_to_string(variables_derivees, ', ') AS \"lesquelles\"\n            FROM ml.rapports_derive ORDER BY id DESC LIMIT 10",
+          "rawSql": "\n            SELECT to_char(horodatage, 'DD/MM HH24:MI') AS \"date\", version_modele AS \"modèle\", n_courant AS \"prédictions\",\n                   CASE WHEN derive_detectee THEN 'DÉRIVE' ELSE 'stable' END AS \"résultat\",\n                   round(100 * part_variables) || ' %' AS \"variables en dérive\",\n                   array_to_string(variables_derivees, ', ') AS \"lesquelles\"\n            FROM ml.rapports_derive ORDER BY id DESC LIMIT 10",
           "refId": "A",
           "editorMode": "code"
         }

@@ -360,130 +360,360 @@ def pipelines():
     g = Layout()
     traites = "sum(rate(artelio_evenements_traites_total[1m]))"
     g.row("Flux temps réel : Kafka → contrôles → PostgreSQL")
-    g.line([
-        stat("Processeurs actifs", 'count(up{job="pipeline"} == 1) or vector(0)',
-             thresholds=[{"color": "red", "value": None}, {"color": "orange", "value": 1}, {"color": "green", "value": 2}],
-             desc="Deux répliques dans le même groupe Kafka : si l'une tombe, l'autre reprend ses partitions."),
-        stat("Débit traité", traites, unit="ops"),
-        stat("Taux de rejet (DLQ)",
-             "sum(rate(artelio_evenements_rejetes_total[5m])) / sum(rate(artelio_evenements_recus_total[5m]))",
-             unit="percentunit", thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 0.05}],
-             desc="Événements invalides envoyés dans la file d'erreurs dlq.erreurs. Alerte au-delà de 5 %."),
-        stat("Latence p95", "histogram_quantile(0.95, sum by (le) (rate(artelio_traitement_latence_secondes_bucket[5m])))",
-             unit="s", thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 2}, {"color": "red", "value": 5}],
-             desc="De l'émission de l'événement à son enregistrement en base. Objectif : moins de 5 s."),
-        stat("Retard des consommateurs", 'sum(kafka_consumergroup_lag{consumergroup="artelio-stream-processor"})',
-             thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 500}, {"color": "red", "value": 1000}]),
-        stat("Événements traités (total)", "sum(artelio_evenements_traites_total)"),
-    ], height=5)
-    g.line([
-        series("Événements par seconde", [("sum(rate(artelio_evenements_recus_total[1m]))", "reçus"),
-                                          (traites, "écrits en base"),
-                                          ("sum(rate(artelio_evenements_rejetes_total[1m]))", "rejetés (DLQ)"),
-                                          ("sum(rate(artelio_evenements_doublons_total[1m]))", "doublons ignorés")], w=12, unit="ops"),
-        series("Rejets par raison", [("sum by (raison) (rate(artelio_evenements_rejetes_total[5m]))", "{{raison}}")],
-               w=12, unit="ops", stack=True, desc="Schéma invalide, JSON cassé, référence inconnue, transition d'état impossible…"),
-    ])
-    g.line([
-        series("Latence de bout en bout", [
-            (f"histogram_quantile({q}, sum by (le) (rate(artelio_traitement_latence_secondes_bucket[2m])))", f"p{int(q * 100)}")
-            for q in (0.5, 0.95, 0.99)], w=8, unit="s"),
-        series("Retard par topic", [('sum by (topic) (kafka_consumergroup_lag{consumergroup="artelio-stream-processor"})', "{{topic}}")], w=8),
-        series("Lots : durée p95 et taille moyenne", [
-            ("histogram_quantile(0.95, sum by (le) (rate(artelio_lot_duree_secondes_bucket[5m])))", "durée p95 (s)"),
-            ("sum(rate(artelio_lot_taille_sum[5m])) / sum(rate(artelio_lot_taille_count[5m]))", "taille moyenne")], w=8),
-    ])
+    g.line(
+        [
+            stat(
+                "Processeurs actifs",
+                'count(up{job="pipeline"} == 1) or vector(0)',
+                thresholds=[{"color": "red", "value": None}, {"color": "orange", "value": 1}, {"color": "green", "value": 2}],
+                desc="Deux répliques dans le même groupe Kafka : si l'une tombe, l'autre reprend ses partitions.",
+            ),
+            stat("Débit traité", traites, unit="ops"),
+            stat(
+                "Taux de rejet (DLQ)",
+                "sum(rate(artelio_evenements_rejetes_total[5m])) / sum(rate(artelio_evenements_recus_total[5m]))",
+                unit="percentunit",
+                thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 0.05}],
+                desc="Événements invalides envoyés dans la file d'erreurs dlq.erreurs. Alerte au-delà de 5 %.",
+            ),
+            stat(
+                "Latence p95",
+                "histogram_quantile(0.95, sum by (le) (rate(artelio_traitement_latence_secondes_bucket[5m])))",
+                unit="s",
+                thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 2}, {"color": "red", "value": 5}],
+                desc="De l'émission de l'événement à son enregistrement en base. Objectif : moins de 5 s.",
+            ),
+            stat(
+                "Retard des consommateurs",
+                'sum(kafka_consumergroup_lag{consumergroup="artelio-stream-processor"})',
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "orange", "value": 500},
+                    {"color": "red", "value": 1000},
+                ],
+            ),
+            stat("Événements traités (total)", "sum(artelio_evenements_traites_total)"),
+        ],
+        height=5,
+    )
+    g.line(
+        [
+            series(
+                "Événements par seconde",
+                [
+                    ("sum(rate(artelio_evenements_recus_total[1m]))", "reçus"),
+                    (traites, "écrits en base"),
+                    ("sum(rate(artelio_evenements_rejetes_total[1m]))", "rejetés (DLQ)"),
+                    ("sum(rate(artelio_evenements_doublons_total[1m]))", "doublons ignorés"),
+                ],
+                w=12,
+                unit="ops",
+            ),
+            series(
+                "Rejets par raison",
+                [("sum by (raison) (rate(artelio_evenements_rejetes_total[5m]))", "{{raison}}")],
+                w=12,
+                unit="ops",
+                stack=True,
+                desc="Schéma invalide, JSON cassé, référence inconnue, transition d'état impossible…",
+            ),
+        ]
+    )
+    g.line(
+        [
+            series(
+                "Latence de bout en bout",
+                [
+                    (
+                        f"histogram_quantile({q}, sum by (le) (rate(artelio_traitement_latence_secondes_bucket[2m])))",
+                        f"p{int(q * 100)}",
+                    )
+                    for q in (0.5, 0.95, 0.99)
+                ],
+                w=8,
+                unit="s",
+            ),
+            series(
+                "Retard par topic",
+                [('sum by (topic) (kafka_consumergroup_lag{consumergroup="artelio-stream-processor"})', "{{topic}}")],
+                w=8,
+            ),
+            series(
+                "Lots : durée p95 et taille moyenne",
+                [
+                    ("histogram_quantile(0.95, sum by (le) (rate(artelio_lot_duree_secondes_bucket[5m])))", "durée p95 (s)"),
+                    ("sum(rate(artelio_lot_taille_sum[5m])) / sum(rate(artelio_lot_taille_count[5m]))", "taille moyenne"),
+                ],
+                w=8,
+            ),
+        ]
+    )
 
     g.row("Traitements planifiés (Airflow) et qualité des données")
-    g.line([
-        stat("Dernier chargement de l'entrepôt", "time() - artelio_dwh_dernier_chargement_timestamp_seconds", w=6, unit="s",
-             thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 1800}, {"color": "red", "value": 7200}],
-             desc="DAG artelio_dwh_incremental, toutes les 15 minutes."),
-        stat("Règles qualité conformes", "count(artelio_qualite_regle_ok == 1) / count(artelio_qualite_regle_ok)", w=6,
-             unit="percentunit", thresholds=[{"color": "red", "value": None}, {"color": "orange", "value": 0.8}, {"color": "green", "value": 1}]),
-        stat("Opérations suspectes (audit)", "max(artelio_anomalies_audit) or vector(0)", w=6,
-             thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 1}],
-             desc="Modifications ou suppressions massives hors DPO : déclenche la procédure de violation."),
-        stat("Dernier échec Airflow", "max(artelio_dag_dernier_echec_timestamp_seconds) * 1000", w=6, unit="dateTimeFromNow",
-             thresholds=[{"color": "orange", "value": None}], no_value="Aucun échec",
-             desc="Dernier échec définitif d'une tâche (après 3 tentatives automatiques)."),
-    ], height=5)
-    g.line([
-        {
-            "type": "bargauge", "title": "Taux de conformité par règle (plan de gouvernance §6)", "w": 12, "datasource": PROM,
-            "targets": [prom_target("artelio_qualite_taux_conformite", "{{regle}}")],
-            "options": {"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": True,
-                        "reduceOptions": {"calcs": ["lastNotNull"]}},
-            "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0.9, "max": 1, "decimals": 2, "thresholds": {
-                "mode": "absolute", "steps": [{"color": "red", "value": None}, {"color": "orange", "value": 0.98},
-                                              {"color": "green", "value": 0.99}]}}, "overrides": []},
-        },
-        sql_panel("Dernières exécutions (traçabilité)", """
+    g.line(
+        [
+            stat(
+                "Dernier chargement de l'entrepôt",
+                "time() - artelio_dwh_dernier_chargement_timestamp_seconds",
+                w=6,
+                unit="s",
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "orange", "value": 1800},
+                    {"color": "red", "value": 7200},
+                ],
+                desc="DAG artelio_dwh_incremental, toutes les 15 minutes.",
+            ),
+            stat(
+                "Règles qualité conformes",
+                "count(artelio_qualite_regle_ok == 1) / count(artelio_qualite_regle_ok)",
+                w=6,
+                unit="percentunit",
+                thresholds=[{"color": "red", "value": None}, {"color": "orange", "value": 0.8}, {"color": "green", "value": 1}],
+            ),
+            stat(
+                "Opérations suspectes (audit)",
+                "max(artelio_anomalies_audit) or vector(0)",
+                w=6,
+                thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 1}],
+                desc="Modifications ou suppressions massives hors DPO : déclenche la procédure de violation.",
+            ),
+            stat(
+                "Dernier échec Airflow",
+                "max(artelio_dag_dernier_echec_timestamp_seconds) * 1000",
+                w=6,
+                unit="dateTimeFromNow",
+                thresholds=[{"color": "orange", "value": None}],
+                no_value="Aucun échec",
+                desc="Dernier échec définitif d'une tâche (après 3 tentatives automatiques).",
+            ),
+        ],
+        height=5,
+    )
+    g.line(
+        [
+            {
+                "type": "bargauge",
+                "title": "Taux de conformité par règle (plan de gouvernance §6)",
+                "w": 12,
+                "datasource": PROM,
+                "targets": [prom_target("artelio_qualite_taux_conformite", "{{regle}}")],
+                "options": {
+                    "orientation": "horizontal",
+                    "displayMode": "gradient",
+                    "showUnfilled": True,
+                    "reduceOptions": {"calcs": ["lastNotNull"]},
+                },
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percentunit",
+                        "min": 0.9,
+                        "max": 1,
+                        "decimals": 2,
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {"color": "red", "value": None},
+                                {"color": "orange", "value": 0.98},
+                                {"color": "green", "value": 0.99},
+                            ],
+                        },
+                    },
+                    "overrides": [],
+                },
+            },
+            sql_panel(
+                "Dernières exécutions (traçabilité)",
+                """
             SELECT to_char(debut, 'DD/MM HH24:MI') AS debut, dag_id, tache, statut, lignes_lues, lignes_ecrites,
                    round(extract(epoch FROM fin - debut)::numeric, 1) AS "durée (s)"
-            FROM pipeline.journal_executions ORDER BY id DESC LIMIT 12""", kind="table", w=12),
-    ], height=9)
-    return dashboard("Pipelines temps réel Artelio", "artelio-pipelines", g.panels, refresh="10s", range_="now-1h",
-                     desc="Bloc 3 : débit, latence, rejets, retard Kafka, qualité des données et exécutions Airflow.")
+            FROM pipeline.journal_executions ORDER BY id DESC LIMIT 12""",
+                kind="table",
+                w=12,
+            ),
+        ],
+        height=9,
+    )
+    return dashboard(
+        "Pipelines temps réel Artelio",
+        "artelio-pipelines",
+        g.panels,
+        refresh="10s",
+        range_="now-1h",
+        desc="Bloc 3 : débit, latence, rejets, retard Kafka, qualité des données et exécutions Airflow.",
+    )
 
 
 def ia():
     """Bloc 4 : API de qualification, qualité des prédictions, dérive et réentraînement."""
     g = Layout()
     g.row("Service : API de qualification")
-    g.line([
-        stat("API disponible", 'max(up{job="ia-api"}) or vector(0)', mappings=UP_MAPPING, thresholds=RED_IF_ZERO),
-        stat("Requêtes / s", "sum(rate(artelio_ia_requetes_total[1m]))", unit="reqps"),
-        stat("Latence p95", 'histogram_quantile(0.95, sum by (le) (rate(artelio_ia_latence_secondes_bucket{route=~"/v1.*"}[5m])))',
-             unit="s", thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}],
-             desc="Objectif : moins de 300 ms."),
-        stat("Erreurs serveur", 'sum(rate(artelio_ia_requetes_total{code=~"5.."}[5m])) / sum(rate(artelio_ia_requetes_total[5m])) or vector(0)',
-             unit="percentunit", thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 0.01}]),
-        stat("Revue humaine", "sum(rate(artelio_ia_revue_humaine_total[30m])) / sum(rate(artelio_ia_predictions_total[30m]))",
-             unit="percentunit", thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}],
-             desc="Part des demandes qu'un humain doit valider (confiance faible, hors domaine, urgence critique suspectée)."),
-        stat("Modèle servi", "max by (version) (artelio_ia_modele_info)", legend="{{version}}",
-             desc="Version du registre MLflow portant l'alias « champion »."),
-    ], height=5)
-    g.line([
-        series("Prédictions par métier", [("sum by (metier) (rate(artelio_ia_predictions_total[5m]))", "{{metier}}")], w=8, unit="ops", stack=True),
-        series("Prédictions par urgence", [("sum by (urgence) (rate(artelio_ia_predictions_total[5m]))", "{{urgence}}")], w=8, unit="ops", stack=True),
-        series("Motifs de revue humaine", [("sum by (motif) (rate(artelio_ia_revue_humaine_total[5m]))", "{{motif}}")], w=8, unit="ops", stack=True),
-    ])
-    g.line([
-        series("Latence de l'API (p50 / p95 / p99)", [
-            (f'histogram_quantile({q}, sum by (le) (rate(artelio_ia_latence_secondes_bucket{{route=~"/v1.*"}}[5m])))', f"p{int(q * 100)}")
-            for q in (0.5, 0.95, 0.99)], w=8, unit="s"),
-        series("Confiance médiane du modèle", [("histogram_quantile(0.5, sum by (le) (rate(artelio_ia_confiance_metier_bucket[15m])))", "médiane"),
-                                               ("histogram_quantile(0.1, sum by (le) (rate(artelio_ia_confiance_metier_bucket[15m])))", "10e centile")],
-               w=8, desc="Une baisse de confiance est un signe précoce de dérive."),
-        series("Mots inconnus du vocabulaire", [("histogram_quantile(0.9, sum by (le) (rate(artelio_ia_taux_hors_vocabulaire_bucket[15m])))", "90e centile")],
-               w=8, unit="percentunit", desc="Nouveaux équipements, nouveaux usages : indicateur de dérive."),
-    ])
+    g.line(
+        [
+            stat("API disponible", 'max(up{job="ia-api"}) or vector(0)', mappings=UP_MAPPING, thresholds=RED_IF_ZERO),
+            stat("Requêtes / s", "sum(rate(artelio_ia_requetes_total[1m]))", unit="reqps"),
+            stat(
+                "Latence p95",
+                'histogram_quantile(0.95, sum by (le) (rate(artelio_ia_latence_secondes_bucket{route=~"/v1.*"}[5m])))',
+                unit="s",
+                thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}],
+                desc="Objectif : moins de 300 ms.",
+            ),
+            stat(
+                "Erreurs serveur",
+                'sum(rate(artelio_ia_requetes_total{code=~"5.."}[5m])) / sum(rate(artelio_ia_requetes_total[5m])) or vector(0)',
+                unit="percentunit",
+                thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 0.01}],
+            ),
+            stat(
+                "Revue humaine",
+                "sum(rate(artelio_ia_revue_humaine_total[30m])) / sum(rate(artelio_ia_predictions_total[30m]))",
+                unit="percentunit",
+                thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}],
+                desc="Part des demandes qu'un humain doit valider (confiance faible, hors domaine, urgence critique suspectée).",
+            ),
+            stat(
+                "Modèle servi",
+                "max by (version) (artelio_ia_modele_info)",
+                legend="{{version}}",
+                desc="Version du registre MLflow portant l'alias « champion ».",
+            ),
+        ],
+        height=5,
+    )
+    g.line(
+        [
+            series(
+                "Prédictions par métier",
+                [("sum by (metier) (rate(artelio_ia_predictions_total[5m]))", "{{metier}}")],
+                w=8,
+                unit="ops",
+                stack=True,
+            ),
+            series(
+                "Prédictions par urgence",
+                [("sum by (urgence) (rate(artelio_ia_predictions_total[5m]))", "{{urgence}}")],
+                w=8,
+                unit="ops",
+                stack=True,
+            ),
+            series(
+                "Motifs de revue humaine",
+                [("sum by (motif) (rate(artelio_ia_revue_humaine_total[5m]))", "{{motif}}")],
+                w=8,
+                unit="ops",
+                stack=True,
+            ),
+        ]
+    )
+    g.line(
+        [
+            series(
+                "Latence de l'API (p50 / p95 / p99)",
+                [
+                    (
+                        f'histogram_quantile({q}, sum by (le) (rate(artelio_ia_latence_secondes_bucket{{route=~"/v1.*"}}[5m])))',
+                        f"p{int(q * 100)}",
+                    )
+                    for q in (0.5, 0.95, 0.99)
+                ],
+                w=8,
+                unit="s",
+            ),
+            series(
+                "Confiance médiane du modèle",
+                [
+                    ("histogram_quantile(0.5, sum by (le) (rate(artelio_ia_confiance_metier_bucket[15m])))", "médiane"),
+                    ("histogram_quantile(0.1, sum by (le) (rate(artelio_ia_confiance_metier_bucket[15m])))", "10e centile"),
+                ],
+                w=8,
+                desc="Une baisse de confiance est un signe précoce de dérive.",
+            ),
+            series(
+                "Mots inconnus du vocabulaire",
+                [("histogram_quantile(0.9, sum by (le) (rate(artelio_ia_taux_hors_vocabulaire_bucket[15m])))", "90e centile")],
+                w=8,
+                unit="percentunit",
+                desc="Nouveaux équipements, nouveaux usages : indicateur de dérive.",
+            ),
+        ]
+    )
     g.row("MLOps : dérive, performance réelle, réentraînement")
-    g.line([
-        stat("Dérive (Evidently)", "artelio_ia_derive_detectee", w=4,
-             mappings=[{"type": "value", "options": {"0": {"text": "STABLE", "color": "green"}, "1": {"text": "DÉRIVE", "color": "red"}}}],
-             thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 1}]),
-        stat("Variables en dérive", "artelio_ia_derive_part_variables", w=4, unit="percentunit",
-             thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}]),
-        stat("Correction humaine (7 j)", "artelio_ia_taux_correction_humaine", w=4, unit="percentunit",
-             thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.1}, {"color": "red", "value": 0.15}],
-             desc="Part des métiers prédits que le support a corrigés : la performance réelle en production."),
-        stat("Dernier entraînement", "artelio_ia_dernier_entrainement_timestamp_seconds * 1000", w=4, unit="dateTimeFromNow"),
-        stat("Dernier modèle promu ?", "artelio_ia_dernier_entrainement_promu", w=4,
-             mappings=[{"type": "value", "options": {"0": {"text": "REFUSÉ", "color": "orange"}, "1": {"text": "PROMU", "color": "green"}}}]),
-        stat("F1 métier (test final)", 'artelio_ia_evaluation{metrique="test_final.metier.f1_macro"}', w=4, unit="percentunit"),
-    ], height=5)
-    g.line([
-        sql_panel("Historique des analyses de dérive", """
+    g.line(
+        [
+            stat(
+                "Dérive (Evidently)",
+                "artelio_ia_derive_detectee",
+                w=4,
+                mappings=[
+                    {
+                        "type": "value",
+                        "options": {"0": {"text": "STABLE", "color": "green"}, "1": {"text": "DÉRIVE", "color": "red"}},
+                    }
+                ],
+                thresholds=[{"color": "green", "value": None}, {"color": "red", "value": 1}],
+            ),
+            stat(
+                "Variables en dérive",
+                "artelio_ia_derive_part_variables",
+                w=4,
+                unit="percentunit",
+                thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 0.2}, {"color": "red", "value": 0.3}],
+            ),
+            stat(
+                "Correction humaine (7 j)",
+                "artelio_ia_taux_correction_humaine",
+                w=4,
+                unit="percentunit",
+                thresholds=[
+                    {"color": "green", "value": None},
+                    {"color": "orange", "value": 0.1},
+                    {"color": "red", "value": 0.15},
+                ],
+                desc="Part des métiers prédits que le support a corrigés : la performance réelle en production.",
+            ),
+            stat("Dernier entraînement", "artelio_ia_dernier_entrainement_timestamp_seconds * 1000", w=4, unit="dateTimeFromNow"),
+            stat(
+                "Dernier modèle promu ?",
+                "artelio_ia_dernier_entrainement_promu",
+                w=4,
+                mappings=[
+                    {
+                        "type": "value",
+                        "options": {"0": {"text": "REFUSÉ", "color": "orange"}, "1": {"text": "PROMU", "color": "green"}},
+                    }
+                ],
+            ),
+            stat(
+                "F1 métier (test final)", 'artelio_ia_evaluation{metrique="test_final.metier.f1_macro"}', w=4, unit="percentunit"
+            ),
+        ],
+        height=5,
+    )
+    g.line(
+        [
+            sql_panel(
+                "Historique des analyses de dérive",
+                """
             SELECT to_char(horodatage, 'DD/MM HH24:MI') AS "date", version_modele AS "modèle", n_courant AS "prédictions",
                    CASE WHEN derive_detectee THEN 'DÉRIVE' ELSE 'stable' END AS "résultat",
-                   round(100 * part_variables) || ' %' AS "variables en dérive", array_to_string(variables_derivees, ', ') AS "lesquelles"
-            FROM ml.rapports_derive ORDER BY id DESC LIMIT 10""", kind="table", w=24),
-    ], height=8)
-    return dashboard("IA de qualification Artelio", "artelio-ia", g.panels, refresh="10s", range_="now-3h",
-                     desc="Bloc 4 : service de prédiction, qualité, dérive des données et réentraînement automatique.")
+                   round(100 * part_variables) || ' %' AS "variables en dérive",
+                   array_to_string(variables_derivees, ', ') AS "lesquelles"
+            FROM ml.rapports_derive ORDER BY id DESC LIMIT 10""",
+                kind="table",
+                w=24,
+            ),
+        ],
+        height=8,
+    )
+    return dashboard(
+        "IA de qualification Artelio",
+        "artelio-ia",
+        g.panels,
+        refresh="10s",
+        range_="now-3h",
+        desc="Bloc 4 : service de prédiction, qualité, dérive des données et réentraînement automatique.",
+    )
 
 
 def dashboard(title, uid, panels, refresh, range_, desc):
@@ -502,6 +732,11 @@ def dashboard(title, uid, panels, refresh, range_, desc):
 
 
 if __name__ == "__main__":
-    for name, board in (("plateforme.json", plateforme()), ("metier.json", metier()), ("pipelines.json", pipelines()), ("ia.json", ia())):
+    for name, board in (
+        ("plateforme.json", plateforme()),
+        ("metier.json", metier()),
+        ("pipelines.json", pipelines()),
+        ("ia.json", ia()),
+    ):
         (OUT / name).write_text(json.dumps(board, indent=2, ensure_ascii=False), encoding="utf-8")
         print("écrit :", OUT / name)
